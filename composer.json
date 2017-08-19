@@ -1,0 +1,13 @@
+{
+    "name": "crazyphp/stophide",
+    "description": "Unshort and unhide urls.",
+    "license": "GPL-3.0",
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "CrazyPHP\\StopHide\\": "src/CrazyPHP/StopHide"
+        }
+    }
+}

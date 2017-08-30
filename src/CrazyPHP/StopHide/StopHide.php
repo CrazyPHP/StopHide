@@ -12,7 +12,7 @@ class StopHide
     * 
     * @var string
     */
-    public $user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36';
+    protected $user_agent = null;
     
     /**
     * Max queries to find end url
@@ -20,6 +20,13 @@ class StopHide
     * @var int
     */
     protected $max_queries = 5;
+    
+    /**
+    * Query timeout
+    * 
+    * @var int
+    */
+    protected $curl_timeout = 15;
     
     /**
     * Absolute path to cookie file
@@ -54,11 +61,15 @@ class StopHide
     * 
     * @param int $max_queries
     * @param string $cookie_file
+    * @param int $curl_timeout
+    * @param string $user_agent
     */
-    public function __construct($max_queries = 5, $cookie_file = null)
+    public function __construct($max_queries = 5, $cookie_file = null, $curl_timeout = 15, $user_agent = null)
     {
         $this->max_queries = $max_queries;
-        $this->cookie_file = $cookie_file;    
+        $this->cookie_file = $cookie_file; 
+        $this->curl_timeout = $curl_timeout;  
+        $this->user_agent = $user_agent;  
     }
     
     /**
@@ -268,22 +279,19 @@ class StopHide
     */
     public function get($url, $referer = null)
     {
+        
         $headers = [];
-        // Get cURL resource
         $curl = curl_init();
-        // Set some options - we are passing in a useragent too here
-        curl_setopt_array($curl, [
-            CURLOPT_COOKIEJAR => $this->cookie_file,
-            CURLOPT_COOKIEFILE => $this->cookie_file,
-            CURLOPT_REFERER => $referer,
+        
+        $curl_data = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_URL => $url,
-            CURLOPT_USERAGENT => $this->user_agent,
             CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$headers)
             {
                 $len = strlen($header);
                 $header = explode(':', $header, 2);
-                if(count($header) < 2){ // ignore invalid headers
+                //ignore invalid headers
+                if(count($header) < 2){
                     return $len;
                 }
                 $name = strtolower(trim($header[0]));
@@ -294,13 +302,27 @@ class StopHide
                 }
                 return $len;
             },
-        ]);
-        // Send the request & save response to $resp 
+        ];
+        if($this->curl_timeout){
+            $curl_data[CURLOPT_TIMEOUT] = $this->curl_timeout;  
+        }
+        if($this->cookie_file){
+            $curl_data[CURLOPT_COOKIEJAR] = $this->cookie_file;  
+            $curl_data[CURLOPT_COOKIEFILE] = $this->cookie_file; 
+        }
+        if($this->user_agent){
+            $curl_data[CURLOPT_USERAGENT] = $this->user_agent;   
+        }
+        if($referer){
+            $curl_data[CURLOPT_REFERER] = $referer;   
+        }
+        curl_setopt_array($curl, $curl_data);
+        
         $resp = curl_exec($curl);   
         $info = curl_getinfo($curl);  
         $error = curl_error($curl);
         $errno = curl_errno($curl);
-        // Close request to clear up some resources
+        
         curl_close($curl);  
         
         return [

@@ -133,18 +133,21 @@ class StopHide
         }else{ 
             if(in_array($item['info']['http_code'], $this->redirect_statuses)){
                 $this->appendHistory($item, 'redirect');   
-                $data = $this->getAndParse($item['info']['redirect_url'], null, $count);     
+                $next_url = $this->completeUrl($item['info']['redirect_url'], $item['info']['url']);
+                $data = $this->getAndParse($next_url, null, $count);     
             }elseif(in_array($item['info']['http_code'], $this->content_statuses)){
                 if(array_key_exists('refresh', $item['headers']) && count($item['headers']['refresh'])>0){
                     $data = $this->appendHistory($item, 'redirect');
                     preg_match('/url=(.*)/imu', $item['headers']['refresh'][0], $match);
-                    $data = $this->getAndParse($match[1], $item['info']['url'], $count);       
+                    $next_url = $this->completeUrl($match[1], $item['info']['url']);
+                    $data = $this->getAndParse($next_url, $item['info']['url'], $count);       
                 }else{
                     $parse = $this->contentParse($item);
                     if($parse['redirect']){
                         $item['parse'] = $parse;
-                        $this->appendHistory($item, 'redirect');   
-                        $data = $this->getAndParse($parse['url'], null, $count);    
+                        $this->appendHistory($item, 'redirect'); 
+                        $next_url = $this->completeUrl($parse['url'], $item['info']['url']);  
+                        $data = $this->getAndParse($next_url, null, $count);    
                     }else{
                         $data = $this->appendHistory($item, 'content');
                     }
@@ -155,6 +158,28 @@ class StopHide
         }
         
         return $data;
+    }
+    
+    /**
+    * Complete url if only URI provided
+    * 
+    * @param string $url
+    * @param string $top_url
+    */
+    public function completeUrl($url, $top_url)
+    {
+        $completed = $url;
+        if(substr($url,0,1)=='/'){
+            $parsed = parse_url($top_url);
+            $completed = '';
+            if(array_key_exists('scheme',$parsed)){
+                $completed .= $parsed['scheme'].'://';    
+            }else{
+                $completed .= 'http://';
+            }
+            $completed .= $parsed['host'].$url;   
+        }
+        return $completed;
     }
     
     /**
@@ -232,20 +257,36 @@ class StopHide
         * Simple javascript redirect
         */
         if(preg_match('/\.location\s*=\s*[\'"]+(.*)[\'"]+/imu',$item['resp'],$matches)){
-            $result['redirect'] = true;
-            $result['type'] = 'js_location';
-            $result['url'] = $matches[1];
-            return $result;
+            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+                $result['redirect'] = true;
+                $result['type'] = 'js_location';
+                $result['url'] = $matches[1];
+                return $result;    
+            }
         }  
         
         /**
         * META redirect
         */
         if(preg_match('/content\s*=\s*[\'"]+[0-9]+\s*;\s*URL\s*=\s*[\'"]+(.*)[\'"]+[\'"]+/imu',$item['resp'],$matches)){
-            $result['redirect'] = true;
-            $result['type'] = 'meta_refresh';
-            $result['url'] = $matches[1];
-            return $result;
+            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+                $result['redirect'] = true;
+                $result['type'] = 'meta_refresh';
+                $result['url'] = $matches[1];
+                return $result;
+            }
+        }
+        
+        /**
+        * link.pub
+        */
+        if(preg_match('/tw\([\'"]+(.*)[\'"]+\)/imu',$item['resp'],$matches)){
+            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+                $result['redirect'] = true;
+                $result['type'] = 'link_pub';
+                $result['url'] = $matches[1];
+                return $result;
+            }
         }
         
         return $result;

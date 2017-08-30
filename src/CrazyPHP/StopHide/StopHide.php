@@ -2,6 +2,9 @@
 
 namespace CrazyPHP\StopHide;
 
+/**
+* Unhide any shorten url with full history of redirects.
+*/
 class StopHide 
 {
     /**
@@ -37,20 +40,20 @@ class StopHide
     * 
     * @var array
     */
-    protected $redirect_statuses = [300,301,302,303,304,307,308,];
+    protected $redirect_statuses = [300,301,302,303,304,307,308];
     
     /**
     * All content statuses
     * 
     * @var array
     */
-    protected $content_statuses = [200,201,202,203,204,205,206,];
+    protected $content_statuses = [200,201,202,203,204,205,206];
     
     /**
-    * Create StopHide machine
+    * Create StopHide
     * 
     * @param int $max_queries
-    * @param mixed $cookie_file
+    * @param string $cookie_file
     */
     public function __construct($max_queries = 5, $cookie_file = null)
     {
@@ -59,9 +62,10 @@ class StopHide
     }
     
     /**
-    * Follow all redirects and return array with history
+    * Follow all redirects and return array with results
     * 
     * @param string $url Any shorten url
+    * @return array
     */
     public function resolve($url)
     {
@@ -80,20 +84,27 @@ class StopHide
         }else{
             $last = $this->history[count($this->history)-1];
             if($last['type']=='error'){
-                $result['status'] = 'error';
-                $result['end_url'] = $last['item']['info']['url'];      
+                $result['status'] = 'error';  
             }else{
                 $result['status'] = 'found';
-                $result['end_url'] = $last['item']['info']['url']; 
             }
+            $result['end_url'] = $last['item']['info']['url'];
         } 
-        
+
         $result['history'] = $this->history;
         $result['redirect_count'] = count($this->history);
         
         return $result;        
     }
     
+    /**
+    * Get url and parse with recursion
+    * 
+    * @param string $url
+    * @param string $referer
+    * @param int $count
+    * @return array last query data
+    */
     public function getAndParse($url, $referer = null, $count = 0){
         
         $count++; 
@@ -135,6 +146,12 @@ class StopHide
         return $data;
     }
     
+    /**
+    * Parse item to determine some redirects before making request
+    * 
+    * @param array $item
+    * @return array
+    */
     public function itemParse($item)
     {
         $result = [
@@ -187,9 +204,10 @@ class StopHide
     }
     
     /**
-    * parse content to detect redirect
+    * Parse content to detect redirect
     * 
     * @param array $item
+    * @return array
     */
     public function contentParse($item)
     {
@@ -222,6 +240,13 @@ class StopHide
         return $result;
     }
     
+    /**
+    * Append item to history
+    * 
+    * @param array $item
+    * @param string $type redirect|content|error
+    * @return array this very item
+    */
     public function appendHistory($item, $type = 'redirect')
     {
         $data = [
@@ -235,9 +260,11 @@ class StopHide
     }
     
     /**
-    * Make a query
+    * Make a get query
     * 
     * @param string $url
+    * @param string $referer
+    * @return array
     */
     public function get($url, $referer = null)
     {

@@ -20,7 +20,7 @@ array(4) {
   string(5) "found"
   ["history"]=>
   array(2) { /* history */ }
-  ["redirect_count"]=>
+  ["query_count"]=>
   int(2)
 }
 ```

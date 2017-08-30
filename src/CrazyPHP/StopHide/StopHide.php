@@ -85,7 +85,7 @@ class StopHide
             'end_url' => null,
             'status' => 'error',//too_much|error|found
             'history' => [],
-            'redirect_count' => 0,
+            'query_count' => 0,
         ];
         
         $data = $this->getAndParse($url); 
@@ -103,7 +103,7 @@ class StopHide
         } 
 
         $result['history'] = $this->history;
-        $result['redirect_count'] = count($this->history);
+        $result['query_count'] = count($this->history);
         
         return $result;        
     }

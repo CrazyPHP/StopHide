@@ -54,7 +54,7 @@ class StopHide
     * 
     * @var array
     */
-    protected $content_statuses = [200,201,202,203,204,205,206];
+    protected $content_statuses = [200,201,202,203,204,205,206,429];
     
     /**
     * Create StopHide

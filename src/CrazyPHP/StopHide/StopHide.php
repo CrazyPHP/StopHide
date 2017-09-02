@@ -50,13 +50,6 @@ class StopHide
     protected $redirect_statuses = [300,301,302,303,304,307,308];
     
     /**
-    * All content statuses
-    * 
-    * @var array
-    */
-    protected $content_statuses = [200,201,202,203,204,205,206,403,429,500,501,502,503,504];
-    
-    /**
     * Create StopHide
     * 
     * @param int $max_queries
@@ -80,6 +73,8 @@ class StopHide
     */
     public function resolve($url)
     {
+        
+        $this->history = [];
         
         $result = [
             'end_url' => null,
@@ -135,7 +130,9 @@ class StopHide
                 $this->appendHistory($item, 'redirect');   
                 $next_url = $this->completeUrl($item['info']['redirect_url'], $item['info']['url']);
                 $data = $this->getAndParse($next_url, null, $count);     
-            }elseif(in_array($item['info']['http_code'], $this->content_statuses)){
+            }elseif($item['errno']>0){
+                $data = $this->appendHistory($item, 'error');    
+            }else{
                 if(array_key_exists('refresh', $item['headers']) && count($item['headers']['refresh'])>0){
                     $data = $this->appendHistory($item, 'redirect');
                     preg_match('/url=(.*)/imu', $item['headers']['refresh'][0], $match);
@@ -152,8 +149,6 @@ class StopHide
                         $data = $this->appendHistory($item, 'content');
                     }
                 }       
-            }else{
-                $data = $this->appendHistory($item, 'error'); 
             }
         }
         
@@ -284,6 +279,18 @@ class StopHide
             if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
                 $result['redirect'] = true;
                 $result['type'] = 'link_pub';
+                $result['url'] = $matches[1];
+                return $result;
+            }
+        }
+        
+        /**
+        * double qoo.by
+        */
+        if(preg_match('/\$\("#nexturl"\)\.attr\("href", "(.*)"\);/imu',$item['resp'],$matches)){
+            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+                $result['redirect'] = true;
+                $result['type'] = 'double_qoo_by';
                 $result['url'] = $matches[1];
                 return $result;
             }

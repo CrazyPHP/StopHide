@@ -263,7 +263,7 @@ class StopHide
         /**
         * META redirect
         */
-        if(preg_match('/content\s*=\s*[\'"]+[0-9]+\s*;\s*URL\s*=\s*[\'"]?(.*)[\'"]?[\'"]+/imu',$item['resp'],$matches)){
+        if(preg_match('/content\s*=\s*[\'"]+[^;\'\">]+?\s*;\s*URL\s*=\s*[\'"]?(.*)[\'"]?[\'"]+/imu',$item['resp'],$matches)){
             if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
                 $result['redirect'] = true;
                 $result['type'] = 'meta_refresh';

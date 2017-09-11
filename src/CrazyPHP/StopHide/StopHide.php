@@ -296,6 +296,22 @@ class StopHide
             }
         }
         
+        /**
+        * frame if src is another host
+        */
+        if(preg_match('/<frame[^>]+?src\s*=\s*[\'"]+([^;\'\">]+?)[\'"]+/imu',$item['resp'],$matches)){
+            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+                $parse_match = parse_url($matches[1]);
+                $parse_item = parse_url($item['info']['url']);
+                if($parse_match['host']!=$parse_item['host']){
+                    $result['redirect'] = true;
+                    $result['type'] = 'frame';
+                    $result['url'] = $matches[1];
+                    return $result;
+                }
+            }
+        }
+        
         return $result;
     }
     

@@ -332,6 +332,7 @@ class StopHide
         $curl = curl_init();
         
         $curl_data = [
+            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_URL => $url,
             CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$headers)

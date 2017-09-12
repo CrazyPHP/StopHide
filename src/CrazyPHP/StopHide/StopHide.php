@@ -263,11 +263,19 @@ class StopHide
         /**
         * META redirect
         */
-        if(preg_match('/content\s*=\s*[\'"]+[^;\'\">]+?\s*;\s*URL\s*=\s*[\'"]?(.*)[\'"]?[\'"]+/imu',$item['resp'],$matches)){
-            if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
+        if(preg_match('/.*http-equiv=[\'"]+refresh[\'"]+.*content\s*=\s*[\'"]+[^;\'\">]+?\s*;\s*(URL\s*=\s*[\'"]?|)([^;\'\">]+?)[\'"]?[\'"]+/imu',$item['resp'],$matches)){     
+            if(filter_var($matches[2], FILTER_VALIDATE_URL) !== FALSE){
                 $result['redirect'] = true;
                 $result['type'] = 'meta_refresh';
-                $result['url'] = $matches[1];
+                $result['url'] = $matches[2];
+                return $result;
+            }
+        }
+        if(preg_match('/content\s*=\s*[\'"]+[^;\'\">]+?\s*;\s*(URL\s*=\s*[\'"]?|)([^;\'\">]+?)[\'"]?[\'"]+.*http-equiv=[\'"]+refresh[\'"]+.*/imu',$item['resp'],$matches)){     
+            if(filter_var($matches[2], FILTER_VALIDATE_URL) !== FALSE){
+                $result['redirect'] = true;
+                $result['type'] = 'meta_refresh';
+                $result['url'] = $matches[2];
                 return $result;
             }
         }

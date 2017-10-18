@@ -251,7 +251,7 @@ class StopHide
         /**
         * Simple javascript redirect
         */
-        if(preg_match('/\.location\s*=\s*[\'"]+(.*)[\'"]+/imu',$item['resp'],$matches)){
+        if(preg_match('/["\'\.]+location\s*=\s*[\'"]+([^;\'\">]+?)[\'"]+/imu',$item['resp'],$matches)){
             if(filter_var($matches[1], FILTER_VALIDATE_URL) !== FALSE){
                 $result['redirect'] = true;
                 $result['type'] = 'js_location';
